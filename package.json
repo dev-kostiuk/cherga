@@ -1,0 +1,18 @@
+{
+  "name": "cherga",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "update": "node --experimental-strip-types src/update.ts",
+    "build": "node --experimental-strip-types src/build.ts",
+    "test": "node --experimental-strip-types --test src/model.test.ts src/search.test.ts src/board.test.ts",
+    "serve": "node --experimental-strip-types src/serve.ts"
+  },
+  "dependencies": {
+    "@resvg/resvg-js": "^2.6.2",
+    "esbuild": "^0.25.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0"
+  }
+}

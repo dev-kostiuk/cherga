@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="uk">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#101114">
+    <title>Черга — світло на екрані блокування</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main>
+      <header>
+        <p class="mark">Черга</p>
+        <h1>Світло на екрані блокування</h1>
+        <p class="lead">Додайте місце і чергу. Можна кілька: дім, робота, батьки. Для кожної буде своє посилання на екран.</p>
+      </header>
+
+      <p id="empty" class="empty">Знайдіть місце нижче і натисніть номер черги. Так можна зібрати кілька міст і кілька груп.</p>
+
+      <section id="board" class="board" hidden>
+        <div class="board-head">
+          <h2>Мої черги</h2>
+          <p id="board-count" class="count"></p>
+        </div>
+        <div id="groups"></div>
+      </section>
+
+      <section id="sheet" class="sheet" hidden>
+        <p id="sheet-title" class="sheet-title"></p>
+        <p id="caption" class="note"></p>
+        <div id="phone" class="phone"></div>
+        <div class="linkbox">
+          <label>
+            <span>Посилання на екран</span>
+            <input id="link" readonly>
+          </label>
+          <button id="copy" type="button">Скопіювати</button>
+        </div>
+        <details class="steps">
+          <summary>Як поставити на телефон</summary>
+          <h2>iPhone</h2>
+          <ol>
+            <li>Скопіюйте посилання потрібної черги.</li>
+            <li>У Shortcuts створіть автоматизацію «Час доби» і поставте «Виконувати негайно».</li>
+            <li>Додайте «Get Contents of URL» і вставте посилання.</li>
+            <li>Додайте «Set Wallpaper Photo» для екрана блокування. Вимкніть Crop to Subject і Show Preview.</li>
+            <li>Повторіть на 7:00, 12:00, 18:00 і 22:00. iPhone не вміє сам прокидатися кожні пів години.</li>
+          </ol>
+          <h2>Android</h2>
+          <ol>
+            <li>У MacroDroid поставте таймер кожні 30 хвилин.</li>
+            <li>Дія «HTTP GET» за цим посиланням, далі «встановити шпалери» на екран блокування.</li>
+          </ol>
+        </details>
+      </section>
+
+      <div class="search-wrap">
+        <label class="search">
+          <span id="search-label">Місто, село або область</span>
+          <input id="query" type="search" autocomplete="off" enterkeyhint="search" placeholder="Бровари">
+        </label>
+        <button id="other-place" type="button" hidden>Інше місце</button>
+      </div>
+      <div id="results" class="results"></div>
+
+      <section id="operators" class="block" hidden>
+        <h2>Оператор</h2>
+        <div id="operator-list" class="choices"></div>
+      </section>
+
+      <section id="queues" class="block" hidden>
+        <h2>Черга</h2>
+        <p id="source-line" class="note" hidden></p>
+        <p id="note" class="note" hidden></p>
+        <p id="queue-hint" class="note">Натисніть номер, щоб додати. Можна кілька.</p>
+        <label id="queue-filter-label" class="filter" hidden>
+          <span>Номер черги</span>
+          <input id="queue-filter" type="search" inputmode="decimal" placeholder="12.1" autocomplete="off">
+        </label>
+        <p id="queue-miss" class="note" hidden>У цьому графіку такого номера немає.</p>
+        <div id="queue-list" class="queues"></div>
+      </section>
+
+      <p id="status" class="status" role="status"></p>
+    </main>
+    <script type="module" src="app.js"></script>
+  </body>
+</html>
