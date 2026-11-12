@@ -12,21 +12,51 @@
       <header>
         <p class="mark">Черга</p>
         <h1>Світло на екрані блокування</h1>
-        <p class="lead">Додайте місце і чергу. Можна кілька: дім, робота, батьки. Для кожної буде своє посилання на екран.</p>
+        <p class="lead">Оберіть місто і номер черги. Телефон за посиланням сам поставить графік на сьогодні й на завтра.</p>
       </header>
 
-      <p id="empty" class="empty">Знайдіть місце нижче і натисніть номер черги. Так можна зібрати кілька міст і кілька груп.</p>
-
       <section id="board" class="board" hidden>
-        <div class="board-head">
-          <h2>Мої черги</h2>
-          <p id="board-count" class="count"></p>
+        <h2>Збережені</h2>
+        <div id="groups" class="saved"></div>
+      </section>
+
+      <p id="empty" class="empty">Спочатку місто, потім номер черги з рахунку або повідомлення обленерго. Можна зберегти кілька місць.</p>
+
+      <div class="search-wrap">
+        <label class="search">
+          <span id="search-label">1 · Місто</span>
+          <input id="query" type="search" autocomplete="off" enterkeyhint="search" placeholder="Бровари">
+        </label>
+        <button id="other-place" type="button" hidden>Інше місце</button>
+      </div>
+      <div id="results" class="results"></div>
+
+      <section id="operators" class="block" hidden>
+        <h2>Оператор</h2>
+        <div id="operator-list" class="choices"></div>
+      </section>
+
+      <section id="queues" class="block" hidden>
+        <h2>2 · Черга</h2>
+        <p id="source-line" class="note" hidden></p>
+        <p id="note" class="note" hidden></p>
+        <p id="queue-hint" class="note">Впишіть номер і натисніть «Додати». Або оберіть його нижче.</p>
+        <div id="queue-filter-label" class="add-row" hidden>
+          <label class="filter">
+            <span>Номер черги</span>
+            <input id="queue-filter" type="search" inputmode="decimal" placeholder="1.1" autocomplete="off">
+          </label>
+          <button id="add-queue" type="button">Додати</button>
         </div>
-        <div id="groups"></div>
+        <p id="queue-miss" class="note" hidden>У цьому графіку такого номера немає.</p>
+        <div id="queue-list" class="queues"></div>
       </section>
 
       <section id="sheet" class="sheet" hidden>
+        <h2>3 · Екран</h2>
         <p id="sheet-title" class="sheet-title"></p>
+        <p id="now" class="now"></p>
+        <p id="now-sub" class="note"></p>
         <p id="caption" class="note"></p>
         <div id="phone" class="phone"></div>
         <div class="linkbox">
@@ -34,7 +64,7 @@
             <span>Посилання на екран</span>
             <input id="link" readonly>
           </label>
-          <button id="copy" type="button">Скопіювати</button>
+          <button id="copy" type="button">Скопіювати посилання</button>
         </div>
         <details class="steps">
           <summary>Як поставити на телефон</summary>
@@ -52,33 +82,6 @@
             <li>Дія «HTTP GET» за цим посиланням, далі «встановити шпалери» на екран блокування.</li>
           </ol>
         </details>
-      </section>
-
-      <div class="search-wrap">
-        <label class="search">
-          <span id="search-label">Місто, село або область</span>
-          <input id="query" type="search" autocomplete="off" enterkeyhint="search" placeholder="Бровари">
-        </label>
-        <button id="other-place" type="button" hidden>Інше місце</button>
-      </div>
-      <div id="results" class="results"></div>
-
-      <section id="operators" class="block" hidden>
-        <h2>Оператор</h2>
-        <div id="operator-list" class="choices"></div>
-      </section>
-
-      <section id="queues" class="block" hidden>
-        <h2>Черга</h2>
-        <p id="source-line" class="note" hidden></p>
-        <p id="note" class="note" hidden></p>
-        <p id="queue-hint" class="note">Натисніть номер, щоб додати. Можна кілька.</p>
-        <label id="queue-filter-label" class="filter" hidden>
-          <span>Номер черги</span>
-          <input id="queue-filter" type="search" inputmode="decimal" placeholder="12.1" autocomplete="off">
-        </label>
-        <p id="queue-miss" class="note" hidden>У цьому графіку такого номера немає.</p>
-        <div id="queue-list" class="queues"></div>
       </section>
 
       <p id="status" class="status" role="status"></p>

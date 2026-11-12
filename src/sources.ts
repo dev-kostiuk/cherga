@@ -16,6 +16,7 @@ import {
   type FrankivskEntry,
   type YasnoDay,
   isoDate,
+  parseChernivtsi,
   parseDtekFact,
   parseFrankivsk,
   parsePoltavaTable,
@@ -25,7 +26,10 @@ import {
   parseZhytomyr,
   plansFromDays,
   rssItems,
+  scheduleDate,
+  telegramMessages,
   titleDate,
+  htmlArticles,
 } from "./parse.ts"
 
 const LIVE = new Set([
@@ -41,6 +45,11 @@ const LIVE = new Set([
   "rivne",
   "kharkiv",
   "cherkasy",
+  "zaporizhzhia",
+  "kirovohrad",
+  "khmelnytskyi",
+  "chernivtsi",
+  "chernihiv",
 ])
 
 export function isLive(id: string): boolean {
@@ -106,6 +115,16 @@ async function loadQueues(id: string, today: string, tomorrow: string): Promise<
       return kharkiv(today, tomorrow)
     case "ivano-frankivsk":
       return frankivsk(today, tomorrow)
+    case "zaporizhzhia":
+      return zaporizhzhia(today, tomorrow)
+    case "kirovohrad":
+      return kirovohrad(today, tomorrow)
+    case "khmelnytskyi":
+      return communityFact("Khmelnytskoblenerho.json", today, tomorrow)
+    case "chernivtsi":
+      return chernivtsi(today, tomorrow)
+    case "chernihiv":
+      return communityFact("Chernihivoblenergo.json", today, tomorrow)
     default:
       return []
   }
@@ -320,4 +339,94 @@ async function frankivsk(today: string, tomorrow: string): Promise<QueuePlan[]> 
     }
   }
   return parseFrankivsk(entries, today, tomorrow)
+}
+
+const COMMUNITY = "https://raw.githubusercontent.com/yaroslav2901/OE_OUTAGE_DATA/main/data"
+const FRESH_MS = 36 * 60 * 60 * 1000
+
+async function communityFact(file: string, today: string, tomorrow: string): Promise<QueuePlan[]> {
+  const payload = JSON.parse(await getText(`${COMMUNITY}/${file}`)) as {
+    lastUpdated?: string
+    fact?: { data?: Record<string, Record<string, Record<string, string>>>; update?: string }
+  }
+  const updated = payload.lastUpdated ? new Date(payload.lastUpdated).getTime() : 0
+  if (!updated || Date.now() - updated > FRESH_MS) throw new Error(`${file} застарів`)
+  const queues = parseDtekFact(payload.fact ?? {}, today, tomorrow)
+  const useful = queues.some((queue) => queue.today.slots.length === 48 || queue.tomorrow.slots.length === 48)
+  if (!useful) throw new Error(`${file} без годин на сьогодні чи завтра`)
+  return queues
+}
+
+async function chernivtsi(today: string, tomorrow: string): Promise<QueuePlan[]> {
+  const current = parseChernivtsi(await getText("https://oblenergo.cv.ua/shutdowns/"))
+  const next = parseChernivtsi(await getText("https://oblenergo.cv.ua/shutdowns/?next"))
+  const todayGroups = current.date === today ? current.groups : next.date === today ? next.groups : null
+  const tomorrowGroups = next.date === tomorrow ? next.groups : current.date === tomorrow ? current.groups : null
+  if (!todayGroups || todayGroups.size < 8) throw new Error("Чернівці: сітку не розібрано")
+  return [...todayGroups.keys()].map((queue) =>
+    queuePlan(
+      queue,
+      { date: today, status: "applies", slots: todayGroups.get(queue)! },
+      tomorrowGroups?.get(queue)
+        ? { date: tomorrow, status: "applies", slots: tomorrowGroups.get(queue)! }
+        : emptyDay(tomorrow, "waiting"),
+      null,
+    ),
+  )
+}
+
+async function zaporizhzhia(today: string, tomorrow: string): Promise<QueuePlan[]> {
+  try {
+    const articles = htmlArticles(await getText("https://www.zoe.com.ua/outage/")).map((article, index) => ({
+      title: article.title,
+      slug: String(index),
+      publishedAt: new Date(Date.now() - index * 60_000).toISOString(),
+      html: article.html,
+    }))
+    return await textPosts(articles, today, tomorrow, async (post) => ({
+      html: post.html ?? "",
+      publishedAt: post.publishedAt,
+    }))
+  } catch {
+    return communityFact("Zaporizhzhiaoblenergo.json", today, tomorrow)
+  }
+}
+
+async function kirovohrad(today: string, tomorrow: string): Promise<QueuePlan[]> {
+  const messages = telegramMessages(await getText("https://t.me/s/SvitloKropyvnytskyiMisto"))
+  const best = new Map<string, { at: string; text: string }>()
+  for (const message of messages) {
+    const date = scheduleDate(message.text)
+    if (!date || (date !== today && date !== tomorrow)) continue
+    if (!/гпв|погодинн/i.test(message.text)) continue
+    const current = best.get(date)
+    if (!current || message.at > current.at) best.set(date, message)
+  }
+  const days = new Map<string, Map<string, Array<[number, number]>>>()
+  const cancelled = new Set<string>()
+  let updated: string | null = null
+  for (const [date, message] of best) {
+    updated = message.at
+    if (/скасован/i.test(message.text)) {
+      cancelled.add(date)
+      continue
+    }
+    const intervals = parseQueueIntervals(message.text)
+    if (intervals.size < 8) throw new Error(`Кіровоград: у тексті на ${date} замало черг`)
+    days.set(date, intervals)
+  }
+  if (days.size === 0 && cancelled.size === 0) throw new Error("Кіровоград: немає графіка на сьогодні чи завтра")
+  const queues = plansFromDays(days, today, tomorrow, updated)
+  if (cancelled.size === 0) return queues
+  const known = [...days.values()][0]
+  const names = queues.length > 0 ? queues.map((queue) => queue.queue) : [...(known?.keys() ?? QUEUE_PAIRS)]
+  return names.map((queue) => {
+    const existing = queues.find((item) => item.queue === queue)
+    return queuePlan(
+      queue,
+      cancelled.has(today) ? emptyDay(today, "none") : (existing?.today ?? emptyDay(today, "waiting")),
+      cancelled.has(tomorrow) ? emptyDay(tomorrow, "none") : (existing?.tomorrow ?? emptyDay(tomorrow, "waiting")),
+      updated,
+    )
+  })
 }

@@ -110,7 +110,7 @@ export const CATALOG: CatalogItem[] = [
     oblastSlug: "zaporizhzhia",
     sourceName: "Запоріжжяобленерго",
     sourceUrl: "https://www.zoe.com.ua",
-    note: `${gap} Графік публікують текстом на сайті, який часто не відкривається з-за кордону.`,
+    note: null,
   },
   {
     id: "ivano-frankivsk",
@@ -130,7 +130,7 @@ export const CATALOG: CatalogItem[] = [
     oblastSlug: "kirovohrad",
     sourceName: "Кіровоградобленерго",
     sourceUrl: "https://kiroe.com.ua",
-    note: `${gap} Графік публікують у Telegram.`,
+    note: null,
   },
   {
     id: "luhansk",
@@ -240,7 +240,7 @@ export const CATALOG: CatalogItem[] = [
     oblastSlug: "khmelnytskyi",
     sourceName: "Хмельницькобленерго",
     sourceUrl: "https://hoe.com.ua",
-    note: `${gap} Графік публікують картинкою.`,
+    note: null,
   },
   {
     id: "cherkasy",
@@ -260,7 +260,7 @@ export const CATALOG: CatalogItem[] = [
     oblastSlug: "chernivtsi",
     sourceName: "Чернівціобленерго",
     sourceUrl: "https://oblenergo.cv.ua",
-    note: `${gap} На сайті групи 1–12, а сітка годин не віддається відкритим запитом.`,
+    note: null,
   },
   {
     id: "chernihiv",
@@ -270,7 +270,7 @@ export const CATALOG: CatalogItem[] = [
     oblastSlug: "chernihiv",
     sourceName: "Чернігівобленерго",
     sourceUrl: "https://chernihivoblenergo.com.ua",
-    note: `${gap} Години публікують картинкою.`,
+    note: null,
   },
   {
     id: "crimea",

@@ -80,11 +80,12 @@ function clampMinute(value: number): number {
 }
 
 export function clockToMin(clock: string): number {
-  const match = clock.trim().match(/^(\d{1,2}):(\d{2})$/)
+  const match = clock.trim().match(/^(\d{1,2})(?::(\d{2}))?$/)
   if (!match) return 0
   const hour = Number(match[1])
-  const minute = Number(match[2])
+  const minute = Number(match[2] ?? "0")
   if (hour === 24 && minute === 0) return 1440
+  if (hour > 24 || minute > 59) return 0
   return hour * 60 + minute
 }
 

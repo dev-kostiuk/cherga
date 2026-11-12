@@ -41,10 +41,10 @@ export function normalizeScheduleText(input: string): string {
 export function parseQueueIntervals(input: string): Map<string, Array<[number, number]>> {
   const text = normalizeScheduleText(input)
   const found = new Map<string, Array<[number, number]>>()
-  const queues = /(\d{1,2}\.\d)\s+((?:\d{1,2}:\d{2}\s*-\s*\d{1,2}:\d{2}\s*[;,.]?\s*)+)/g
+  const queues = /(\d{1,2}\.\d)\s*:?\s*((?:(?:\d{1,2}:\d{2}|\d{1,2})\s*-\s*(?:\d{1,2}:\d{2}|\d{1,2})\s*[;,.]?\s*)+)/g
   for (const match of text.matchAll(queues)) {
     const ranges: Array<[number, number]> = []
-    for (const time of match[2]!.matchAll(/(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})/g)) {
+    for (const time of match[2]!.matchAll(/(\d{1,2}(?::\d{2})?)\s*-\s*(\d{1,2}(?::\d{2})?)/g)) {
       ranges.push([clockToMin(time[1]!), clockToMin(time[2]!)])
     }
     if (ranges.length > 0) found.set(match[1]!, ranges)
@@ -354,4 +354,49 @@ export function isoDate(value: string): string {
   const match = value.match(/^(\d{4}-\d{2}-\d{2})/)
   if (match) return match[1]!
   return addIsoDays(kyivNow(new Date()).date, 0)
+}
+
+export function parseChernivtsi(html: string): { date: string | null; groups: Map<string, Slot[]> } {
+  const stamp = html.match(/(\d{2}\.\d{2}\.\d{4})/)
+  const date = stamp ? dmyToIso(stamp[1]!) : null
+  const groups = new Map<string, Slot[]>()
+  for (const match of html.matchAll(/<div id="inf(\d+)"[^>]*>([\s\S]*?)<\/div>/g)) {
+    const cells = [...match[2].matchAll(/<(u|o|s)>([^<]+)<\/\1>/gi)]
+    if (cells.length !== 48) continue
+    const slots = cells.map((cell) => cellMark(cell[2]!))
+    groups.set(match[1]!, slots)
+  }
+  return { date, groups }
+}
+
+function cellMark(value: string): Slot {
+  const kind = value.trim().toLowerCase()
+  if (kind === "в") return 1
+  if (kind === "мз") return 2
+  if (kind === "з") return 0
+  throw new Error(`Чернівці: невідома позначка ${kind}`)
+}
+
+export function htmlArticles(html: string): Array<{ title: string; html: string }> {
+  const articles: Array<{ title: string; html: string }> = []
+  for (const match of html.matchAll(/<article[^>]*>\s*<h2>([\s\S]*?)<\/h2>([\s\S]*?)<\/article>/gi)) {
+    articles.push({ title: stripHtml(match[1]!).replace(/\s+/g, " ").trim(), html: match[2]! })
+  }
+  return articles
+}
+
+export function telegramMessages(html: string): Array<{ at: string; text: string }> {
+  const messages: Array<{ at: string; text: string }> = []
+  for (const block of html.split("tgme_widget_message_wrap").slice(1)) {
+    const text = block.match(/tgme_widget_message_text[^>]*>([\s\S]*?)<\/div>/)
+    const time = block.match(/datetime="([^"]+)"/)
+    if (!text || !time) continue
+    messages.push({ at: time[1]!, text: stripHtml(text[1]!).replace(/\s+/g, " ").trim() })
+  }
+  return messages
+}
+
+export function scheduleDate(text: string): string | null {
+  const stamp = text.match(/(\d{2}\.\d{2}\.\d{4})/)
+  return stamp ? dmyToIso(stamp[1]!) : null
 }

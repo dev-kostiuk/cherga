@@ -1,5 +1,5 @@
 import { addEntry, type Board, type Entry, entryKey, focusEntry, groupEntries, normalizeStored, removeEntry, sameArea } from "../board.ts"
-import { type DayPlan, type OperatorPlan, type QueuePlan, SLOT_COUNT, type Snapshot, compareQueues, headline, kyivNow } from "../model.ts"
+import { type OperatorPlan, type QueuePlan, type Snapshot, compareQueues, headline, kyivNow } from "../model.ts"
 import { renderWallpaper } from "../render.ts"
 import { type PlaceHit, type PlacesFile, searchPlaces } from "../search.ts"
 
@@ -19,14 +19,16 @@ const sourceLine = document.querySelector<HTMLElement>("#source-line")!
 const note = document.querySelector<HTMLElement>("#note")!
 const empty = document.querySelector<HTMLElement>("#empty")!
 const boardEl = document.querySelector<HTMLElement>("#board")!
-const boardCount = document.querySelector<HTMLElement>("#board-count")!
 const groupsEl = document.querySelector<HTMLElement>("#groups")!
 const sheet = document.querySelector<HTMLElement>("#sheet")!
 const sheetTitle = document.querySelector<HTMLElement>("#sheet-title")!
+const now = document.querySelector<HTMLElement>("#now")!
+const nowSub = document.querySelector<HTMLElement>("#now-sub")!
 const phone = document.querySelector<HTMLElement>("#phone")!
 const caption = document.querySelector<HTMLElement>("#caption")!
 const link = document.querySelector<HTMLInputElement>("#link")!
 const copy = document.querySelector<HTMLButtonElement>("#copy")!
+const addQueue = document.querySelector<HTMLButtonElement>("#add-queue")!
 const status = document.querySelector<HTMLElement>("#status")!
 
 let places: PlacesFile | null = null
@@ -54,6 +56,12 @@ query.addEventListener("input", () => {
   render()
 })
 queueFilter.addEventListener("input", render)
+queueFilter.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter") return
+  event.preventDefault()
+  addTypedQueue()
+})
+addQueue.addEventListener("click", addTypedQueue)
 otherPlace.addEventListener("click", () => {
   place = null
   operator = null
@@ -63,7 +71,7 @@ otherPlace.addEventListener("click", () => {
   query.focus()
 })
 copy.addEventListener("click", () => {
-  if (link.value) void copyText(link.value, copy, "Скопіювати")
+  if (link.value) void copyText(link.value, copy, "Скопіювати посилання")
 })
 
 function render(): void {
@@ -76,7 +84,7 @@ function render(): void {
 
 function renderSearch(): void {
   otherPlace.hidden = !place
-  searchLabel.textContent = place ? "Обране місце" : board.entries.length > 0 ? "Додати ще місце" : "Місто, село або область"
+  searchLabel.textContent = place ? "1 · Обране місце" : board.entries.length > 0 ? "1 · Додати ще місце" : "1 · Місто"
 }
 
 function renderResults(): void {
@@ -147,7 +155,7 @@ function renderPicker(): void {
     sourceLine.textContent = `Графік: ${operator.short}`
   }
 
-  queueFilterLabel.hidden = queues.length <= 16
+  queueFilterLabel.hidden = queues.length === 0
   const filter = queueFilter.value.replace(",", ".").trim()
   const visible = queues.filter((item) => !filter || item.queue.startsWith(filter))
   queueMiss.hidden = queues.length === 0 || visible.length > 0
@@ -174,6 +182,19 @@ function showNote(text: string): void {
   sourceLine.textContent = ""
 }
 
+function addTypedQueue(): void {
+  if (!place || !operator) return
+  const filter = queueFilter.value.replace(",", ".").trim()
+  const exact = operator.queues.find((item) => item.queue === filter)
+  const starts = operator.queues.filter((item) => item.queue.startsWith(filter))
+  const chosen = exact ?? (starts.length === 1 ? starts[0] : null)
+  if (!chosen) {
+    flash("У цьому графіку такого номера немає.")
+    return
+  }
+  onQueue(chosen.queue)
+}
+
 function onQueue(queueId: string): void {
   if (!place || !operator) return
   const entry = entryFrom(place, queueId)
@@ -189,7 +210,6 @@ function renderBoard(): void {
   const entries = board.entries
   empty.hidden = entries.length > 0
   boardEl.hidden = entries.length === 0
-  boardCount.textContent = countLabel(entries.length)
   groupsEl.replaceChildren(
     ...groupEntries(entries).map((group) => {
       const section = document.createElement("section")
@@ -200,74 +220,40 @@ function renderBoard(): void {
       where.className = "where"
       where.textContent = groupWhere(group.entries[0]!)
       section.append(title, where)
-      for (const entry of group.entries) section.append(renderRow(entry))
+      const pills = document.createElement("div")
+      pills.className = "place-pills"
+      for (const entry of group.entries) pills.append(renderPill(entry))
+      section.append(pills)
       return section
     }),
   )
 }
 
-function renderRow(entry: Entry): HTMLElement {
+function renderPill(entry: Entry): HTMLElement {
   const resolved = resolve(entry)
-  const row = document.createElement("div")
-  row.className = "row"
+  const wrap = document.createElement("div")
+  wrap.className = "pill-wrap"
+  const button = document.createElement("button")
+  button.type = "button"
+  button.className = "pill"
   const focused = entryKey(entry) === board.focus
-  if (focused) row.classList.add("is-focus")
-
-  const open = document.createElement("button")
-  open.type = "button"
-  open.className = "row-open"
-  const minutes = kyivNow(new Date()).minutes
-  const state = resolved.plan ? headline(resolved.plan.today, minutes) : null
-  open.append(dot(state?.tone ?? "wait"))
-  const title = document.createElement("span")
-  title.className = "row-title"
-  const strong = document.createElement("strong")
-  strong.textContent = entry.queue
-  title.append(strong)
-  if (focused) {
-    const tag = document.createElement("em")
-    tag.className = "screen-tag"
-    tag.textContent = "На екрані"
-    title.append(tag)
-  }
-  const line = document.createElement("span")
-  line.className = "row-status"
-  line.textContent = state ? `${state.title} · ${state.sub}` : "Цієї черги зараз немає в графіку"
-  open.append(title, line)
-  if (resolved.plan && resolved.plan.today.slots.length === SLOT_COUNT) {
-    const bars = document.createElement("span")
-    bars.className = "bars"
-    bars.append(barLine("Сьогодні", resolved.plan.today))
-    if (resolved.plan.tomorrow.slots.length === SLOT_COUNT) bars.append(barLine("Завтра", resolved.plan.tomorrow))
-    else {
-      const later = document.createElement("span")
-      later.className = "tomorrow-note"
-      later.textContent = resolved.plan.tomorrow.status === "emergency" ? "Завтра аварійні відключення" : "Завтра графік ще не опубліковано"
-      bars.append(later)
-    }
-    open.append(bars)
-  }
-  open.addEventListener("click", () => selectEntry(entry))
-
-  const actions = document.createElement("div")
-  actions.className = "row-actions"
-  const copyButton = document.createElement("button")
-  copyButton.type = "button"
-  copyButton.className = "ghost"
-  copyButton.textContent = "Копіювати"
-  copyButton.setAttribute("aria-label", `Скопіювати посилання, ${entry.label}, черга ${entry.queue}`)
-  copyButton.addEventListener("click", () => {
-    void copyEntry(entry, copyButton)
-  })
+  if (focused) button.classList.add("is-focus")
+  const state = resolved.plan ? headline(resolved.plan.today, kyivNow(new Date()).minutes) : null
+  const queueName = document.createElement("strong")
+  queueName.textContent = entry.queue
+  const statusText = document.createElement("span")
+  statusText.className = "pill-status"
+  statusText.textContent = state?.title ?? "немає даних"
+  button.append(dot(state?.tone ?? "wait"), queueName, statusText)
+  button.addEventListener("click", () => selectEntry(entry))
   const removeButton = document.createElement("button")
   removeButton.type = "button"
-  removeButton.className = "ghost icon"
+  removeButton.className = "pill-x"
   removeButton.textContent = "×"
   removeButton.setAttribute("aria-label", `Прибрати ${entry.label}, черга ${entry.queue}`)
   removeButton.addEventListener("click", () => remove(entry))
-  actions.append(copyButton, removeButton)
-  row.append(open, actions)
-  return row
+  wrap.append(button, removeButton)
+  return wrap
 }
 
 function selectEntry(entry: Entry): void {
@@ -300,6 +286,10 @@ function renderSheet(): void {
   if (!entry || !plan || !current) return
   const several = (snapshot?.operators.filter((item) => item.oblastSlug === entry.oblastSlug).length ?? 0) > 1
   sheetTitle.textContent = several ? `${entry.label} · ${current.short} · ${entry.queue}` : `${entry.label} · черга ${entry.queue}`
+  const state = headline(plan.today, kyivNow(new Date()).minutes)
+  now.textContent = state.title
+  now.className = `now ${state.tone}`
+  nowSub.textContent = state.sub
   caption.textContent = sameArea(entry.label, current.oblast) ? "" : `${entry.label} · той самий графік, що й ${current.oblast}.`
   phone.innerHTML = renderWallpaper({
     place: current.oblast,
@@ -361,24 +351,6 @@ function dot(tone: string): HTMLElement {
   return mark
 }
 
-function barLine(label: string, day: DayPlan): HTMLElement {
-  const line = document.createElement("span")
-  line.className = "bar-line"
-  const name = document.createElement("span")
-  name.className = "bar-label"
-  name.textContent = label
-  const bar = document.createElement("span")
-  bar.className = "bar"
-  bar.setAttribute("aria-hidden", "true")
-  for (const slot of day.slots) {
-    const cell = document.createElement("span")
-    cell.className = slot === 0 ? "on" : slot === 2 ? "maybe" : "off"
-    bar.append(cell)
-  }
-  line.append(name, bar)
-  return line
-}
-
 function wallpaperUrl(entry: Entry): string {
   return new URL(`w/${entry.operatorId}/${entry.queue}.png`, document.baseURI).href
 }
@@ -435,32 +407,6 @@ function readRaw(): unknown {
   } catch {
     return null
   }
-}
-
-function countLabel(count: number): string {
-  const mod100 = count % 100
-  const mod10 = count % 10
-  const word = mod10 === 1 && mod100 !== 11 ? "черга" : mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14) ? "черги" : "черг"
-  return `${count} ${word}`
-}
-
-async function copyEntry(entry: Entry, button: HTMLButtonElement): Promise<void> {
-  const focused = entryKey(entry) === board.focus
-  if (!focused) selectEntry(entry)
-  const target = focused ? button : copy
-  const idle = focused ? "Копіювати" : "Скопіювати"
-  try {
-    await navigator.clipboard.writeText(wallpaperUrl(entry))
-    target.textContent = "Готово"
-  } catch {
-    link.value = wallpaperUrl(entry)
-    link.focus()
-    link.select()
-    target.textContent = "Виділіть"
-  }
-  window.setTimeout(() => {
-    target.textContent = idle
-  }, 1600)
 }
 
 async function copyText(url: string, button: HTMLButtonElement, idle: string): Promise<void> {
