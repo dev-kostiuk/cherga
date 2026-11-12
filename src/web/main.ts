@@ -1,6 +1,6 @@
-import { addEntry, type Board, type Entry, entryKey, focusEntry, groupEntries, normalizeStored, removeEntry, sameArea } from "../board.ts"
-import { type OperatorPlan, type QueuePlan, type Snapshot, compareQueues, headline, kyivNow } from "../model.ts"
-import { renderWallpaper } from "../render.ts"
+import { addEntry, type Board, decodeBoard, encodeBoard, type Entry, entryKey, focusEntry, groupEntries, normalizeStored, removeEntry, sameArea } from "../board.ts"
+import { type DayPlan, type OperatorPlan, type QueuePlan, SLOT_COUNT, type Slot, type Snapshot, compareQueues, headline, kyivNow, ukDate } from "../model.ts"
+import { renderBoardWallpaper, type WallpaperInput } from "../render.ts"
 import { type PlaceHit, type PlacesFile, searchPlaces } from "../search.ts"
 
 const query = document.querySelector<HTMLInputElement>("#query")!
@@ -24,7 +24,9 @@ const sheet = document.querySelector<HTMLElement>("#sheet")!
 const sheetTitle = document.querySelector<HTMLElement>("#sheet-title")!
 const now = document.querySelector<HTMLElement>("#now")!
 const nowSub = document.querySelector<HTMLElement>("#now-sub")!
+const lines = document.querySelector<HTMLElement>("#lines")!
 const phone = document.querySelector<HTMLElement>("#phone")!
+const back = document.querySelector<HTMLAnchorElement>("#back")!
 const caption = document.querySelector<HTMLElement>("#caption")!
 const link = document.querySelector<HTMLInputElement>("#link")!
 const copy = document.querySelector<HTMLButtonElement>("#copy")!
@@ -75,6 +77,7 @@ copy.addEventListener("click", () => {
 })
 
 function render(): void {
+  if (!board.entries.length) document.body.classList.remove("screen-only")
   renderBoard()
   renderSearch()
   renderResults()
@@ -201,7 +204,7 @@ function onQueue(queueId: string): void {
   const key = entryKey(entry)
   const exists = board.entries.some((item) => entryKey(item) === key)
   board = exists ? focusEntry(board, key) : addEntry(board, entry)
-  persist(entry)
+  persist()
   render()
   if (!exists) flash(`Додано: ${entry.label}, черга ${entry.queue}`)
 }
@@ -259,7 +262,7 @@ function renderPill(entry: Entry): HTMLElement {
 function selectEntry(entry: Entry): void {
   board = focusEntry(board, entryKey(entry))
   openEntry(entry)
-  persist(entry)
+  persist()
   render()
 }
 
@@ -273,33 +276,44 @@ function remove(entry: Entry): void {
     query.value = ""
     queueFilter.value = ""
   }
-  persist(next)
+  persist()
   render()
 }
 
 function renderSheet(): void {
-  const entry = board.entries.find((item) => entryKey(item) === board.focus) ?? null
-  const resolved = entry ? resolve(entry) : null
-  const plan = resolved?.plan ?? null
-  const current = resolved?.operator ?? null
-  sheet.hidden = !entry || !plan || !current
-  if (!entry || !plan || !current) return
-  const several = (snapshot?.operators.filter((item) => item.oblastSlug === entry.oblastSlug).length ?? 0) > 1
-  sheetTitle.textContent = several ? `${entry.label} · ${current.short} · ${entry.queue}` : `${entry.label} · черга ${entry.queue}`
-  const state = headline(plan.today, kyivNow(new Date()).minutes)
-  now.textContent = state.title
-  now.className = `now ${state.tone}`
-  nowSub.textContent = state.sub
-  caption.textContent = sameArea(entry.label, current.oblast) ? "" : `${entry.label} · той самий графік, що й ${current.oblast}.`
-  phone.innerHTML = renderWallpaper({
-    place: current.oblast,
-    queue: plan.queue,
-    source: current.short,
-    today: plan.today,
-    tomorrow: plan.tomorrow,
-    updated: plan.updated ?? current.fetchedAt,
-  })
-  link.value = wallpaperUrl(entry)
+  const entries = board.entries
+  const screenOnly = document.body.classList.contains("screen-only")
+  sheet.hidden = entries.length === 0
+  if (!entries.length) return
+  const focus = entries.find((item) => entryKey(item) === board.focus) ?? entries[0]!
+  const resolved = resolve(focus)
+  const many = entries.length > 1
+  const several = (snapshot?.operators.filter((item) => item.oblastSlug === focus.oblastSlug).length ?? 0) > 1
+  sheetTitle.textContent = many
+    ? "Усе на одному екрані"
+    : several && resolved.operator
+      ? `${focus.label} · ${resolved.operator.short} · ${focus.queue}`
+      : `${focus.label} · черга ${focus.queue}`
+  const minutes = kyivNow(new Date()).minutes
+  const showSingle = !screenOnly && !many && !!resolved.plan
+  now.hidden = !showSingle
+  nowSub.hidden = !showSingle
+  if (showSingle && resolved.plan) {
+    const state = headline(resolved.plan.today, minutes)
+    now.textContent = state.title
+    now.className = `now ${state.tone}`
+    nowSub.textContent = state.sub
+  }
+  lines.hidden = !screenOnly && !many && !!resolved.plan
+  if (!lines.hidden) lines.replaceChildren(...entries.map((entry) => renderLine(entry, minutes)))
+  const shared = !many && resolved.operator && !sameArea(focus.label, resolved.operator.oblast)
+    ? `${focus.label} · той самий графік, що й ${resolved.operator.oblast}.`
+    : ""
+  caption.hidden = !shared
+  caption.textContent = shared
+  phone.innerHTML = renderBoardWallpaper(entries.map(wallpaperInput))
+  back.href = pageUrl(false)
+  link.value = pageUrl(true)
 }
 
 function openEntry(entry: Entry): void {
@@ -351,54 +365,168 @@ function dot(tone: string): HTMLElement {
   return mark
 }
 
-function wallpaperUrl(entry: Entry): string {
-  return new URL(`w/${entry.operatorId}/${entry.queue}.png`, document.baseURI).href
+function wallpaperInput(entry: Entry): WallpaperInput {
+  const { operator: current, plan } = resolve(entry)
+  const today = kyivNow(new Date()).date
+  const blank = (date: string): DayPlan => ({ date, status: "unavailable", slots: [] })
+  if (!current || !plan) {
+    return {
+      place: entry.label,
+      queue: entry.queue,
+      source: current?.short ?? "",
+      today: blank(today),
+      tomorrow: blank(today),
+      updated: current?.fetchedAt ?? null,
+    }
+  }
+  return {
+    place: entry.label,
+    queue: entry.queue,
+    source: current.short,
+    today: plan.today,
+    tomorrow: plan.tomorrow,
+    updated: plan.updated ?? current.fetchedAt,
+  }
 }
 
-function persist(entry: Entry | null): void {
-  localStorage.setItem("cherga", JSON.stringify(board))
-  const next = new URL(document.baseURI)
-  if (entry) {
-    next.searchParams.set("o", entry.operatorId)
-    next.searchParams.set("q", entry.queue)
-    next.searchParams.set("p", entry.label)
+function renderLine(entry: Entry, minutes: number): HTMLElement {
+  const { operator: current, plan } = resolve(entry)
+  const state = plan
+    ? headline(plan.today, minutes)
+    : { title: "Немає даних", sub: current?.note || "Графік ще не підключено", tone: "wait" as const }
+  const area = current && !sameArea(entry.label, current.oblast) ? `${current.oblast} · ` : ""
+  const row = document.createElement("li")
+  row.className = "line"
+  const top = document.createElement("div")
+  top.className = "line-top"
+  const name = document.createElement("strong")
+  name.textContent = `${entry.label} · ${entry.queue}`
+  const mark = document.createElement("span")
+  mark.className = `state ${state.tone}`
+  mark.textContent = state.title
+  top.append(name, mark)
+  const sub = document.createElement("span")
+  sub.className = "sub"
+  sub.textContent = `${area}${state.sub}`
+  row.append(top, sub)
+  if (plan) {
+    appendDay(row, "Сьогодні", plan.today, true)
+    appendDay(row, "Завтра", plan.tomorrow, false)
   }
+  return row
+}
+
+function appendDay(parent: HTMLElement, label: string, day: DayPlan, today: boolean): void {
+  const name = document.createElement("p")
+  name.className = "day-label"
+  name.textContent = day.date ? `${label} · ${ukDate(day.date)}` : label
+  parent.append(name)
+  if ((day.status === "applies" || day.status === "none") && day.slots.length === SLOT_COUNT) {
+    const bar = document.createElement("div")
+    bar.className = today ? "bar today" : "bar"
+    bar.style.background = barBackground(day.slots)
+    if (today) bar.style.setProperty("--now", `${(kyivNow(new Date()).minutes / 1440) * 100}%`)
+    bar.setAttribute("aria-hidden", "true")
+    parent.append(bar)
+    return
+  }
+  const message = document.createElement("p")
+  message.className = "sub"
+  message.textContent = day.status === "emergency"
+    ? "Аварійні відключення, плановий графік не діє"
+    : day.status === "none"
+      ? "Відключень немає"
+      : "Графік ще не опубліковано"
+  parent.append(message)
+}
+
+function barBackground(slots: Slot[]): string {
+  const stops = slots.map((slot, index) => {
+    const color = slot === 1 ? "#1c1e24" : slot === 2 ? "#e2b15a" : "#f3efe4"
+    const start = (index / SLOT_COUNT) * 100
+    const end = ((index + 1) / SLOT_COUNT) * 100
+    return `${color} ${start}% ${end}%`
+  })
+  return `linear-gradient(90deg, ${stops.join(", ")})`
+}
+
+function pageUrl(screen: boolean): string {
+  const next = new URL(document.baseURI)
+  next.search = ""
+  next.hash = ""
+  if (board.entries.length) next.searchParams.set("b", encodeBoard(board.entries))
+  if (screen) next.searchParams.set("s", "1")
+  return next.href
+}
+
+function persist(): void {
+  localStorage.setItem("cherga", JSON.stringify(board))
+  const screen = document.body.classList.contains("screen-only") && board.entries.length > 0
+  const next = new URL(pageUrl(screen))
   const current = `${location.pathname}${location.search}`
   const target = `${next.pathname}${next.search}`
   if (current !== target) history.replaceState(null, "", next)
 }
 
 function restore(): void {
-  board = normalizeStored(readRaw())
+  const stored = normalizeStored(readRaw())
   const params = new URLSearchParams(location.search)
+  const encoded = params.get("b")
+  if (encoded) {
+    const entries = decodeBoard(encoded).flatMap((item) => {
+      const entry = hydrate(item)
+      return entry ? [entry] : []
+    })
+    board = entries.length ? { entries, focus: entryKey(entries[entries.length - 1]!) } : stored
+  } else {
+    board = stored
+    applyLegacy(params)
+  }
+  document.body.classList.toggle("screen-only", params.get("s") === "1" && board.entries.length > 0)
+  const focused = board.entries.find((item) => entryKey(item) === board.focus) ?? null
+  if (focused) openEntry(focused)
+  persist()
+  render()
+}
+
+function hydrate(raw: { operatorId: string, queue: string, label: string }): Entry | null {
+  const found = snapshot?.operators.find((item) => item.id === raw.operatorId)
+  if (!found || !places) return null
+  const oblast = places.oblasts.find((item) => item.slug === found.oblastSlug)
+  const oblastName = oblast?.name ?? found.oblast
+  return {
+    operatorId: raw.operatorId,
+    queue: raw.queue,
+    label: raw.label,
+    detail: sameArea(raw.label, oblastName) ? "уся область" : oblastName,
+    oblastSlug: found.oblastSlug,
+    oblastName,
+  }
+}
+
+function applyLegacy(params: URLSearchParams): void {
   const operatorId = params.get("o")
   const queueId = params.get("q")
   const placeLabel = params.get("p")
-  if (operatorId && queueId && snapshot && places) {
-    const found = snapshot.operators.find((item) => item.id === operatorId)
-    if (found?.queues.some((item) => item.queue === queueId)) {
-      const oblast = places.oblasts.find((item) => item.slug === found.oblastSlug)
-      const matches = board.entries.filter((item) => item.operatorId === operatorId && item.queue === queueId)
-      const existing = placeLabel ? matches.find((item) => item.label === placeLabel) : matches[0]
-      if (existing) {
-        board = focusEntry(board, entryKey(existing))
-      } else {
-        const label = placeLabel || oblast?.name || found.oblast
-        board = addEntry(board, {
-          operatorId,
-          queue: queueId,
-          label,
-          detail: placeLabel && !sameArea(label, oblast?.name ?? found.oblast) ? (oblast?.name ?? found.oblast) : "уся область",
-          oblastSlug: found.oblastSlug,
-          oblastName: oblast?.name ?? found.oblast,
-        })
-      }
-    }
+  if (!operatorId || !queueId || !snapshot || !places) return
+  const found = snapshot.operators.find((item) => item.id === operatorId)
+  if (!found?.queues.some((item) => item.queue === queueId)) return
+  const oblast = places.oblasts.find((item) => item.slug === found.oblastSlug)
+  const matches = board.entries.filter((item) => item.operatorId === operatorId && item.queue === queueId)
+  const existing = placeLabel ? matches.find((item) => item.label === placeLabel) : matches[0]
+  if (existing) {
+    board = focusEntry(board, entryKey(existing))
+    return
   }
-  const focused = board.entries.find((item) => entryKey(item) === board.focus) ?? null
-  if (focused) openEntry(focused)
-  persist(focused)
-  render()
+  const label = placeLabel || oblast?.name || found.oblast
+  board = addEntry(board, {
+    operatorId,
+    queue: queueId,
+    label,
+    detail: placeLabel && !sameArea(label, oblast?.name ?? found.oblast) ? (oblast?.name ?? found.oblast) : "уся область",
+    oblastSlug: found.oblastSlug,
+    oblastName: oblast?.name ?? found.oblast,
+  })
 }
 
 function readRaw(): unknown {

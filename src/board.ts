@@ -24,6 +24,30 @@ export function entryKey(entry: Pick<Entry, "operatorId" | "queue" | "label">): 
   return `${entry.operatorId}\n${entry.queue}\n${entry.label}`
 }
 
+export function encodeBoard(entries: Entry[]): string {
+  return entries
+    .map((entry) => [entry.operatorId, entry.queue, entry.label].map(encodeURIComponent).join("\t"))
+    .join("\n")
+}
+
+export function decodeBoard(value: string): Array<Pick<Entry, "operatorId" | "queue" | "label">> {
+  const decoded: Array<Pick<Entry, "operatorId" | "queue" | "label">> = []
+  for (const row of value.split("\n")) {
+    if (!row) continue
+    const parts = row.split("\t")
+    if (parts.length !== 3) continue
+    try {
+      const operatorId = decodeURIComponent(parts[0] ?? "")
+      const queue = decodeURIComponent(parts[1] ?? "")
+      const label = decodeURIComponent(parts[2] ?? "")
+      if (operatorId && queue && label) decoded.push({ operatorId, queue, label })
+    } catch {
+      continue
+    }
+  }
+  return decoded
+}
+
 export function sameArea(label: string, oblast: string): boolean {
   return label === oblast || oblast.replace(/^м\.\s*/u, "") === label
 }

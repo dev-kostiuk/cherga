@@ -12,7 +12,7 @@
       <header>
         <p class="mark">Черга</p>
         <h1>Світло на екрані блокування</h1>
-        <p class="lead">Оберіть місто і номер черги. Телефон за посиланням сам поставить графік на сьогодні й на завтра.</p>
+        <p class="lead">Оберіть місто і номер черги. Усе, що додасте, збирається на один екран за одним посиланням.</p>
       </header>
 
       <section id="board" class="board" hidden>
@@ -57,29 +57,30 @@
         <p id="sheet-title" class="sheet-title"></p>
         <p id="now" class="now"></p>
         <p id="now-sub" class="note"></p>
-        <p id="caption" class="note"></p>
-        <div id="phone" class="phone"></div>
         <div class="linkbox">
           <label>
-            <span>Посилання на екран</span>
+            <span>Посилання на весь екран</span>
             <input id="link" readonly>
           </label>
           <button id="copy" type="button">Скопіювати посилання</button>
         </div>
+        <ul id="lines" class="lines" hidden></ul>
+        <p id="caption" class="note"></p>
+        <div id="phone" class="phone"></div>
+        <a id="back" class="back" href="./">Змінити</a>
         <details class="steps">
           <summary>Як поставити на телефон</summary>
           <h2>iPhone</h2>
           <ol>
-            <li>Скопіюйте посилання потрібної черги.</li>
+            <li>Скопіюйте одне посилання. На екрані всі збережені черги.</li>
             <li>У Shortcuts створіть автоматизацію «Час доби» і поставте «Виконувати негайно».</li>
-            <li>Додайте «Get Contents of URL» і вставте посилання.</li>
-            <li>Додайте «Set Wallpaper Photo» для екрана блокування. Вимкніть Crop to Subject і Show Preview.</li>
+            <li>Додайте «Open URLs» і вставте посилання.</li>
             <li>Повторіть на 7:00, 12:00, 18:00 і 22:00. iPhone не вміє сам прокидатися кожні пів години.</li>
           </ol>
           <h2>Android</h2>
           <ol>
-            <li>У MacroDroid поставте таймер кожні 30 хвилин.</li>
-            <li>Дія «HTTP GET» за цим посиланням, далі «встановити шпалери» на екран блокування.</li>
+            <li>У MacroDroid поставте таймер.</li>
+            <li>Дія «відкрити сайт» за цим посиланням. На екрані всі черги разом.</li>
           </ol>
         </details>
       </section>

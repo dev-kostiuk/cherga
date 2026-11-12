@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
-import { addEntry, entryKey, groupEntries, normalizeStored, removeEntry, sameArea, type Entry } from "./board.ts"
+import { addEntry, decodeBoard, encodeBoard, entryKey, groupEntries, normalizeStored, removeEntry, sameArea, type Entry } from "./board.ts"
 
 const brovary: Entry = {
   operatorId: "kyiv-region",
@@ -53,5 +53,14 @@ describe("board", () => {
     assert.equal(board.focus, entryKey(brovary))
     assert.equal(sameArea("Київ", "м. Київ"), true)
     assert.equal(sameArea("Бровари", "Київська область"), false)
+  })
+
+  it("keeps every place in one link", () => {
+    const encoded = encodeBoard([kyiv, brovary])
+    assert.deepEqual(decodeBoard(encoded), [
+      { operatorId: "kyiv", queue: "27.1", label: "Київ" },
+      { operatorId: "kyiv-region", queue: "1.1", label: "Бровари" },
+    ])
+    assert.deepEqual(decodeBoard("битий\tрядок"), [])
   })
 })

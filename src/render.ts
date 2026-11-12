@@ -68,6 +68,125 @@ export function renderWallpaper(input: WallpaperInput): string {
   return parts.join("")
 }
 
+export function renderBoardWallpaper(items: WallpaperInput[], now?: Date): string {
+  if (items.length <= 1 && items[0]) return renderWallpaper({ ...items[0], now })
+  return renderMany(items, now ?? new Date())
+}
+
+function renderMany(items: WallpaperInput[], nowDate: Date): string {
+  const now = kyivNow(nowDate)
+  const parts: string[] = []
+  parts.push(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${WALLPAPER_WIDTH}" height="${WALLPAPER_HEIGHT}" viewBox="0 0 ${WALLPAPER_WIDTH} ${WALLPAPER_HEIGHT}">`,
+  )
+  parts.push(`<rect width="${WALLPAPER_WIDTH}" height="${WALLPAPER_HEIGHT}" fill="#101114"/>`)
+  parts.push(
+    `<radialGradient id="glow" cx="50%" cy="38%" r="55%"><stop offset="0%" stop-color="#2a241c"/><stop offset="70%" stop-color="#101114" stop-opacity="0"/></radialGradient>`,
+  )
+  parts.push(`<rect width="${WALLPAPER_WIDTH}" height="${WALLPAPER_HEIGHT}" fill="url(#glow)"/>`)
+
+  const margin = 72
+  const gapX = 32
+  const gapY = 26
+  const top = 960
+  const bottom = 2440
+  const columns = items.length >= 5 ? 2 : 1
+  const rows = Math.ceil(items.length / columns)
+  const cardWidth = columns === 1 ? WALLPAPER_WIDTH - margin * 2 : (WALLPAPER_WIDTH - margin * 2 - gapX) / 2
+  let cardHeight = items.length <= 2 ? 520 : items.length <= 4 ? 330 : 250
+  const available = bottom - top - gapY * (rows - 1)
+  if (rows * cardHeight > available) cardHeight = available / rows
+
+  items.forEach((item, index) => {
+    const column = index % columns
+    const row = Math.floor(index / columns)
+    const x = margin + column * (cardWidth + gapX)
+    const y = top + row * (cardHeight + gapY)
+    drawCard(parts, item, x, y, cardWidth, cardHeight, now.minutes)
+  })
+
+  const sources = [...new Set(items.map((item) => item.source).filter(Boolean))]
+  const source = sources.length === 1 ? sources[0]! : "Кілька операторів"
+  const stamps = items.map((item) => item.updated).filter((value): value is string => Boolean(value)).sort()
+  const updated = stamps.at(-1) ? kyivNow(new Date(stamps.at(-1)!)).hm : null
+  const footer = updated ? `${source}  ·  оновлено ${updated}` : source
+  parts.push(text(footer, margin, 2508, 22, "#6f6a62", 400))
+  parts.push("</svg>")
+  return parts.join("")
+}
+
+function drawCard(
+  parts: string[],
+  item: WallpaperInput,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  nowMin: number,
+): void {
+  const state = headline(item.today, nowMin)
+  const narrow = width < 700
+  const limit = y + height
+  let cursor = y + (narrow ? 28 : 42)
+  parts.push(text(fit(`${item.place} · ${item.queue}`, narrow ? 22 : 32), x, cursor, narrow ? 24 : 36, INK, 600))
+  cursor += narrow ? 32 : 46
+  if (cursor > limit - 16) return
+  parts.push(text(fit(state.title, narrow ? 20 : 26), x, cursor, narrow ? 20 : 28, toneColor(state.tone), 600))
+  cursor += narrow ? 28 : 36
+  if (state.tone !== "alert" && height > (narrow ? 190 : 220) && cursor < limit - 20) {
+    parts.push(text(fit(state.sub, narrow ? 30 : 44), x, cursor, narrow ? 16 : 22, state.tone === "on" ? MUTED : AMBER, 500))
+    cursor += narrow ? 24 : 30
+  }
+  if (state.tone === "alert") {
+    if (cursor < limit - 16) parts.push(text("Плановий графік зараз не діє.", x, cursor, 20, MUTED, 400))
+    return
+  }
+  cursor += narrow ? 6 : 10
+  const showTomorrow = limit - cursor > (narrow ? 88 : 120)
+  const bar = Math.min(narrow ? 34 : 58, Math.max(20, (limit - cursor - (showTomorrow ? 64 : 24)) / (showTomorrow ? 2 : 1)))
+  if (cursor + bar > limit) return
+  cursor = drawCompactDay(parts, "Сьогодні", item.today, cursor, x, width, bar, nowMin, narrow)
+  if (!showTomorrow || cursor + 18 > limit) return
+  cursor += narrow ? 12 : 18
+  drawCompactDay(parts, "Завтра", item.tomorrow, cursor, x, width, Math.max(18, bar - 8), null, narrow)
+}
+
+function drawCompactDay(
+  parts: string[],
+  label: string,
+  day: DayPlan,
+  y: number,
+  x: number,
+  width: number,
+  bar: number,
+  nowMin: number | null,
+  narrow: boolean,
+): number {
+  const labelSize = narrow ? 14 : 18
+  parts.push(text(label.toUpperCase(), x, y, labelSize, MUTED, 500, narrow ? 1.2 : 2.4))
+  if (!narrow && day.date) parts.push(text(ukDate(day.date), x + 148, y, labelSize, "#6f6a62", 400))
+  y += narrow ? 12 : 16
+  const showBar = (day.status === "applies" || day.status === "none") && day.slots.length === SLOT_COUNT
+  if (!showBar) {
+    const message = day.status === "emergency"
+      ? "Аварійні відключення"
+      : day.status === "none"
+        ? "Відключень немає"
+        : "Графік ще не опубліковано"
+    parts.push(text(message, x, y + 20, narrow ? 16 : 22, MUTED, 400))
+    return y + (narrow ? 36 : 48)
+  }
+  parts.push(track(day.slots, x, y, width, bar, nowMin))
+  y += bar + (narrow ? 16 : 22)
+  parts.push(hourLabels(x, y, width, narrow ? [0, 12] : [0, 6, 12, 18]))
+  return y + (narrow ? 14 : 18)
+}
+
+function fit(value: string, max: number): string {
+  if (value.length <= max) return value
+  return `${value.slice(0, Math.max(1, max - 1))}…`
+}
+
 function drawDay(
   parts: string[],
   label: string,
@@ -138,10 +257,10 @@ function track(slots: Slot[], x: number, y: number, width: number, height: numbe
   return marks.join("")
 }
 
-function hourLabels(x: number, y: number, width: number): string {
+function hourLabels(x: number, y: number, width: number, hours: readonly number[] = [0, 6, 12, 18]): string {
   const gap = 4
   const hourWidth = (width - gap * 23) / 24
-  return [0, 6, 12, 18]
+  return hours
     .map((hour) => {
       const center = x + hour * (hourWidth + gap) + hourWidth / 2
       return text(String(hour).padStart(2, "0"), center - 14, y, 18, "#6f6a62", 500)
