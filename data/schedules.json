@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-11T23:03:00.120Z",
+  "generatedAt": "2026-11-12T03:08:52.655Z",
   "operators": [
     {
       "id": "kyiv",
@@ -9,7 +9,7 @@
       "oblastSlug": "kyiv-city",
       "sourceName": "Yasno",
       "sourceUrl": "https://yasno.com.ua",
-      "fetchedAt": "2026-11-11T23:02:47.966Z",
+      "fetchedAt": "2026-11-12T03:08:25.827Z",
       "ok": true,
       "error": null,
       "note": null,
@@ -3804,7 +3804,7 @@
       "oblastSlug": "kyiv",
       "sourceName": "ДТЕК",
       "sourceUrl": "https://www.dtek-krem.com.ua",
-      "fetchedAt": "2026-11-11T23:02:48.473Z",
+      "fetchedAt": "2026-11-12T03:08:26.177Z",
       "ok": true,
       "error": null,
       "note": null,
@@ -4603,7 +4603,7 @@
       "oblastSlug": "dnipro",
       "sourceName": "Yasno",
       "sourceUrl": "https://yasno.com.ua",
-      "fetchedAt": "2026-11-11T23:02:48.867Z",
+      "fetchedAt": "2026-11-12T03:08:26.507Z",
       "ok": true,
       "error": null,
       "note": null,
@@ -5374,7 +5374,7 @@
       "oblastSlug": "dnipro",
       "sourceName": "Yasno",
       "sourceUrl": "https://cek.dp.ua",
-      "fetchedAt": "2026-11-11T23:02:49.249Z",
+      "fetchedAt": "2026-11-12T03:08:26.835Z",
       "ok": true,
       "error": null,
       "note": null,
@@ -6159,14 +6159,14 @@
       "oblastSlug": "zhytomyr",
       "sourceName": "Житомиробленерго",
       "sourceUrl": "https://www.ztoe.com.ua",
-      "fetchedAt": "2026-11-11T23:02:49.853Z",
+      "fetchedAt": "2026-11-12T03:08:28.006Z",
       "ok": true,
       "error": null,
       "note": null,
       "queues": [
         {
           "queue": "1.1",
-          "updated": "2026-11-12T01:00:00+02:00",
+          "updated": "2026-11-12T05:00:00+02:00",
           "today": {
             "date": "2026-11-12",
             "status": "applies",
@@ -6229,7 +6229,7 @@
         },
         {
           "queue": "1.2",
-          "updated": "2026-11-12T01:00:00+02:00",
+          "updated": "2026-11-12T05:00:00+02:00",
           "today": {
             "date": "2026-11-12",
             "status": "applies",
@@ -6292,7 +6292,7 @@
         },
         {
           "queue": "2.1",
-          "updated": "2026-11-12T01:00:00+02:00",
+          "updated": "2026-11-12T05:00:00+02:00",
           "today": {
             "date": "2026-11-12",
             "status": "applies",
@@ -6355,7 +6355,7 @@
         },
         {
           "queue": "2.2",
-          "updated": "2026-11-12T01:00:00+02:00",
+          "updated": "2026-11-12T05:00:00+02:00",
           "today": {
             "date": "2026-11-12",
             "status": "applies",
@@ -6418,7 +6418,7 @@
         },
         {
           "queue": "3.1",
-          "updated": "2026-11-12T01:00:00+02:00",
+          "updated": "2026-11-12T05:00:00+02:00",
           "today": {
             "date": "2026-11-12",
             "status": "applies",
@@ -6481,7 +6481,7 @@
         },
         {
           "queue": "3.2",
-          "updated": "2026-11-12T01:00:00+02:00",
+          "updated": "2026-11-12T05:00:00+02:00",
           "today": {
             "date": "2026-11-12",
             "status": "applies",
@@ -6544,7 +6544,7 @@
         },
         {
           "queue": "4.1",
-          "updated": "2026-11-12T01:00:00+02:00",
+          "updated": "2026-11-12T05:00:00+02:00",
           "today": {
             "date": "2026-11-12",
             "status": "applies",
@@ -6607,7 +6607,7 @@
         },
         {
           "queue": "4.2",
-          "updated": "2026-11-12T01:00:00+02:00",
+          "updated": "2026-11-12T05:00:00+02:00",
           "today": {
             "date": "2026-11-12",
             "status": "applies",
@@ -6670,7 +6670,7 @@
         },
         {
           "queue": "5.1",
-          "updated": "2026-11-12T01:00:00+02:00",
+          "updated": "2026-11-12T05:00:00+02:00",
           "today": {
             "date": "2026-11-12",
             "status": "applies",
@@ -6733,7 +6733,7 @@
         },
         {
           "queue": "5.2",
-          "updated": "2026-11-12T01:00:00+02:00",
+          "updated": "2026-11-12T05:00:00+02:00",
           "today": {
             "date": "2026-11-12",
             "status": "applies",
@@ -6796,7 +6796,7 @@
         },
         {
           "queue": "6.1",
-          "updated": "2026-11-12T01:00:00+02:00",
+          "updated": "2026-11-12T05:00:00+02:00",
           "today": {
             "date": "2026-11-12",
             "status": "applies",
@@ -6859,7 +6859,7 @@
         },
         {
           "queue": "6.2",
-          "updated": "2026-11-12T01:00:00+02:00",
+          "updated": "2026-11-12T05:00:00+02:00",
           "today": {
             "date": "2026-11-12",
             "status": "applies",
@@ -6958,7 +6958,7 @@
       "oblastSlug": "ivano-frankivsk",
       "sourceName": "Прикарпаттяобленерго",
       "sourceUrl": "https://oe.if.ua",
-      "fetchedAt": "2026-11-11T23:02:55.890Z",
+      "fetchedAt": "2026-11-12T03:08:35.791Z",
       "ok": true,
       "error": null,
       "note": null,
@@ -7183,7 +7183,7 @@
       "oblastSlug": "mykolaiv",
       "sourceName": "Миколаївобленерго",
       "sourceUrl": "https://off.energy.mk.ua",
-      "fetchedAt": "2026-11-11T23:02:56.565Z",
+      "fetchedAt": "2026-11-12T03:08:37.892Z",
       "ok": true,
       "error": null,
       "note": null,
@@ -7954,7 +7954,7 @@
       "oblastSlug": "odesa",
       "sourceName": "ДТЕК",
       "sourceUrl": "https://www.dtek-oem.com.ua",
-      "fetchedAt": "2026-11-11T23:02:57.075Z",
+      "fetchedAt": "2026-11-12T03:08:38.223Z",
       "ok": true,
       "error": null,
       "note": null,
@@ -9496,14 +9496,14 @@
       "oblastSlug": "rivne",
       "sourceName": "Рівнеобленерго",
       "sourceUrl": "https://www.roe.vsei.ua/disconnections",
-      "fetchedAt": "2026-11-11T23:02:58.450Z",
+      "fetchedAt": "2026-11-12T03:08:50.709Z",
       "ok": true,
       "error": null,
       "note": null,
       "queues": [
         {
           "queue": "1.1",
-          "updated": "2026-11-12T01:00:00+02:00",
+          "updated": "2026-11-12T05:00:00+02:00",
           "today": {
             "date": "2026-11-12",
             "status": "waiting",
@@ -9517,7 +9517,7 @@
         },
         {
           "queue": "1.2",
-          "updated": "2026-11-12T01:00:00+02:00",
+          "updated": "2026-11-12T05:00:00+02:00",
           "today": {
             "date": "2026-11-12",
             "status": "waiting",
@@ -9531,7 +9531,7 @@
         },
         {
           "queue": "2.1",
-          "updated": "2026-11-12T01:00:00+02:00",
+          "updated": "2026-11-12T05:00:00+02:00",
           "today": {
             "date": "2026-11-12",
             "status": "waiting",
@@ -9545,7 +9545,7 @@
         },
         {
           "queue": "2.2",
-          "updated": "2026-11-12T01:00:00+02:00",
+          "updated": "2026-11-12T05:00:00+02:00",
           "today": {
             "date": "2026-11-12",
             "status": "waiting",
@@ -9559,7 +9559,7 @@
         },
         {
           "queue": "3.1",
-          "updated": "2026-11-12T01:00:00+02:00",
+          "updated": "2026-11-12T05:00:00+02:00",
           "today": {
             "date": "2026-11-12",
             "status": "waiting",
@@ -9573,7 +9573,7 @@
         },
         {
           "queue": "3.2",
-          "updated": "2026-11-12T01:00:00+02:00",
+          "updated": "2026-11-12T05:00:00+02:00",
           "today": {
             "date": "2026-11-12",
             "status": "waiting",
@@ -9587,7 +9587,7 @@
         },
         {
           "queue": "4.1",
-          "updated": "2026-11-12T01:00:00+02:00",
+          "updated": "2026-11-12T05:00:00+02:00",
           "today": {
             "date": "2026-11-12",
             "status": "waiting",
@@ -9601,7 +9601,7 @@
         },
         {
           "queue": "4.2",
-          "updated": "2026-11-12T01:00:00+02:00",
+          "updated": "2026-11-12T05:00:00+02:00",
           "today": {
             "date": "2026-11-12",
             "status": "waiting",
@@ -9615,7 +9615,7 @@
         },
         {
           "queue": "5.1",
-          "updated": "2026-11-12T01:00:00+02:00",
+          "updated": "2026-11-12T05:00:00+02:00",
           "today": {
             "date": "2026-11-12",
             "status": "waiting",
@@ -9629,7 +9629,7 @@
         },
         {
           "queue": "5.2",
-          "updated": "2026-11-12T01:00:00+02:00",
+          "updated": "2026-11-12T05:00:00+02:00",
           "today": {
             "date": "2026-11-12",
             "status": "waiting",
@@ -9643,7 +9643,7 @@
         },
         {
           "queue": "6.1",
-          "updated": "2026-11-12T01:00:00+02:00",
+          "updated": "2026-11-12T05:00:00+02:00",
           "today": {
             "date": "2026-11-12",
             "status": "waiting",
@@ -9657,7 +9657,7 @@
         },
         {
           "queue": "6.2",
-          "updated": "2026-11-12T01:00:00+02:00",
+          "updated": "2026-11-12T05:00:00+02:00",
           "today": {
             "date": "2026-11-12",
             "status": "waiting",
@@ -10506,7 +10506,7 @@
       "oblastSlug": "cherkasy",
       "sourceName": "Черкасиобленерго",
       "sourceUrl": "https://www.cherkasyoblenergo.com",
-      "fetchedAt": "2026-11-11T23:02:59.818Z",
+      "fetchedAt": "2026-11-12T03:08:52.354Z",
       "ok": true,
       "error": null,
       "note": null,
